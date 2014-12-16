@@ -24,6 +24,8 @@ class FusionClassifier(BaseEstimator, ClassifierMixin):
             self.predictions_.append(classifier.predict_proba(X))
         return numpy.mean(self.predictions_, axis=0)
 
+    def log_proba(self, X):
+	return self.predict_proba(X)
 
 class PerClassFusionClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, classifiers=None):
@@ -54,3 +56,7 @@ class PerClassFusionClassifier(BaseEstimator, ClassifierMixin):
             self.predictions_.append(classifier.predict_proba(X)[:,1])
 	#print self.predictions_
         return numpy.vstack(self.predictions_).T
+
+    def log_proba(self, X):
+        return self.predict_proba(X)
+

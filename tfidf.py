@@ -81,7 +81,6 @@ def tfidf_grams(files):
     for item in features:
         arq.write("%s\n" % item)
     arq.close()
-    exit(0)
     return tfs, tfidf
 
 def vectorizeTFIDF(files):
@@ -122,7 +121,7 @@ if __name__=='__main__':
     # print test_label
 
     #Chama a funcao que faz o n-gram, na qual constroi o dicionario e entao chama a funcao do TF-IDF
-    train_tfs, tfidf = vectorizeTFIDF(train)
+    train_tfs, tfidf = tfidf_grams(train)
     test_tfs = tfidf.transform(_toText(test))
 
     print 'Saving file ', dataset_file

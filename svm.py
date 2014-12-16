@@ -5,10 +5,12 @@ import scipy
 import scipy.io
 import sys, glob
 import os
+import sklearn.ensemble
 import os.path
 from sklearn import cross_validation
 from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn import grid_search
+
 
 #Somente o nome do arquivo
 if __name__=='__main__':
@@ -22,12 +24,28 @@ if __name__=='__main__':
 
         x_train, x_val, y_train, y_val = cross_validation.train_test_split(data['Xtrain'], ytrain, test_size=0.2, random_state=0)
         tuned_parameters = [
-            {'kernel': ['linear'], 'gamma': [1e-2, 1e-3, 1e-4], 'C': [1, 10, 100]}
+            {'C': [.001, 0.1, 0.5, 1, 10]}
         ]
 
+	#x_train = x_train[ (y_train == 2) | (y_train == 3) ,:]
+        #y_train = y_train[ (y_train == 2)  | (y_train == 3) ]
+
+	#x_val = x_val[ (y_val == 2) | (y_val == 3) ,:]
+        #y_val = y_val[ (y_val == 2) | (y_val == 3) ]	
+
+	print len(y_val[y_val==2]), len(y_val[y_val==3]), float(len(y_val[y_val==2]))/ len(y_val[y_val==3])
+        print len(y_train[y_train==2]), len(y_train[y_train==3]), float(len(y_train[y_train==2]))/len(y_train[y_train==3])
+
+
         print " -- TRAINNING: grid search with 10 fold cross-validation"
-        clf = grid_search.GridSearchCV(sklearn.svm.SVC(), tuned_parameters, cv=10, scoring='accuracy')
-        clf.fit(x_train, y_train)
+        clf = grid_search.GridSearchCV(sklearn.svm.LinearSVC(multi_class='ovr', tol=1e-6, dual=False), tuned_parameters, cv=5, scoring='accuracy')
+
+	import sklearn.naive_bayes
+	#import sklearn.neighbors
+	#import sklearn.multiclass
+	#clf = grid_search.GridSearchCV( sklearn.ensemble.GradientBoostingClassifier(), {}, scoring='accuracy')
+        
+	clf.fit(x_train, y_train)
 
         print "score : " + str(clf.best_score_)
         print "params : " + str(clf.best_params_)
@@ -39,6 +57,7 @@ if __name__=='__main__':
 
         cm = confusion_matrix(y_true, y_pred)
         total = numpy.sum(cm, axis=1)
+	print cm.astype(float)*100.0/total
 
         if(cm.shape[0] < 2):
             acc = 1.0
@@ -47,7 +66,6 @@ if __name__=='__main__':
             for i in range(total.shape[0]):
                 if(total[i] > 0):
                     acc.append(float(cm[i, i])/float(total[i]))
-
 
 
         print "score : " + str(score)
