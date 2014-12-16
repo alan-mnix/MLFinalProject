@@ -87,7 +87,7 @@ def tfidf_grams(files):
 def vectorizeTFIDF(files):
     list = _toText(files)
     #this can take some time
-    tfidf = TfidfVectorizer(tokenizer=tokenize, token_pattern="word", stop_words="english", strip_accents="unicode", ngram_range=(4, 4))
+    tfidf = TfidfVectorizer(tokenizer=tokenize, token_pattern="word", stop_words="english", strip_accents="unicode")
     tfs = tfidf.fit_transform(list)
     features = tfidf.get_feature_names()
     return tfs, tfidf
@@ -122,8 +122,8 @@ if __name__=='__main__':
     # print test_label
 
     #Chama a funcao que faz o n-gram, na qual constroi o dicionario e entao chama a funcao do TF-IDF
-    train_tfs, tfidf = tfidf_grams(train)
+    train_tfs, tfidf = vectorizeTFIDF(train)
     test_tfs = tfidf.transform(_toText(test))
 
-
+    print 'Saving file ', dataset_file
     scipy.io.savemat(dataset_file, dict(Xtrain = train_tfs, Ytrain = numericLabels(train_label), Xtest = test_tfs, Ytest = numericLabels(test_label), dictionary = tfidf.get_feature_names()))

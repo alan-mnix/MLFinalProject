@@ -13,8 +13,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 #Somente o nome do arquivo
 if __name__=='__main__':
 
-    with open(sys.argv[1]+'.mat', "rb") as file:
-        data = scipy.io.loadmat(file)
+        data = scipy.io.loadmat(sys.argv[1])
 
         #print("\nTreinando SVM multi classe...")
         #print("\n"+file.split("gram_")[1].split("_")[0])
@@ -41,35 +40,40 @@ if __name__=='__main__':
 
             print "class : " + str(klass)
             print " -- TRAINNING: grid search with 5 fold cross-validation"
-            clf = grid_search.GridSearchCV(svm.SVC(), tuned_parameters, cv=5, scoring='accuracy')
+            clf = grid_search.GridSearchCV(svm.SVC(class_weight={-1:1,1:10}), tuned_parameters, cv=5, scoring='accuracy')
             clf.fit(x_train, y_train)
 
             print "score : " + str(clf.best_score_)
             print "params : " + str(clf.best_params_)
             parametros.append(clf.best_params_)
             for params, mean_score, scores in clf.grid_scores_:
-			    print str(mean_score) + " " + str(scores) + " " + str(params)
+			    print '>> ', str(mean_score) + " " + str(scores) + " " + str(params)
 
             y_true, y_pred = y_val, clf.predict(x_val)
             score = accuracy_score(y_true, y_pred)
             total_score += score
 
             cm = confusion_matrix(y_true, y_pred)
-            total = numpy.sum(cm, axis=1)
+	    cm = cm.astype(float)
+	    print cm
+	    cm = (cm.T/cm.sum(axis=1)).T
+            #total = numpy.sum(cm, axis=1)
 
-            if(cm.shape[0] < 2):
-                acc = 1.0
-            else:
-                acc = []
-                for i in range(total.shape[0]):
-                    if(total[i] > 0):
-                        acc.append(float(cm[i, i])/float(total[i]))
+            #if(cm.shape[0] < 2):
+            #    acc = 1.0
+            #else:
+            #    acc = []
+            #    for i in range(total.shape[0]):
+            #        if(total[i] > 0):
+            #            acc.append(float(cm[i, i])/float(total[i]))
 
-            normalized_score += sum(acc)/float(len(acc))
+            #normalized_score += sum(acc)/float(len(acc))
+
+	    normalized_score += numpy.trace(cm)/cm.shape[0]
 
             print "score : " + str(score)
             # print metrics.classification_report(y_true, y_pred)
-            print "score norm: ", sum(acc)/float(len(acc))
+            print "score norm: ", numpy.trace(cm)/cm.shape[0]
             print "----------------------------"
             #clf = sklearn.svm.SVC(kernel="linear", C=1)
 
