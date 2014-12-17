@@ -46,7 +46,8 @@ def _toText(files):
         file = files[i]
         file["excerpt"] = unicodedata.normalize('NFKD', file["excerpt"]).encode('ascii', 'ignore')
         file["question"]  = unicodedata.normalize('NFKD', file["question"]).encode('ascii', 'ignore')
-        text = str(re.sub(r'[^\x00-\x7F]+',' ', file["question"])+" "+re.sub(r'[^\x00-\x7F]+',' ', file["excerpt"]))
+        #text = file['question']
+	text = str(re.sub(r'[^\x00-\x7F]+',' ', file["question"])+" "+re.sub(r'[^\x00-\x7F]+',' ', file["excerpt"]))
         caracters = ["\'", "\n", "\r", "\t"]
         for c in caracters:
             text = text.replace(c, "")
