@@ -1,3 +1,4 @@
+import heapq, itertools
 import nltk, re, numpy
 import json
 import re
@@ -13,14 +14,13 @@ import sys
 #import psyco
 #psyco.full()
 
-
 pattern=re.compile("[^\w']")
 path = 'dataset/'
 token_dict = {}
 
 p = re.compile(r"[\w']+")
 
-#buffer = [None]*1000
+
 
 class StemmingTokenizer(object):
 
@@ -30,10 +30,11 @@ class StemmingTokenizer(object):
 		#self.stemmer = nltk.stem.porter.PorterStemmer()
 
         def __call__(self, doc):
-            return [self.stemmer.stem(t.lower()) for t in p.findall(doc)]
-	        #self.stemmer.stem(t.lower())
 		
+                return [self.stemmer.stem(t.lower()) for t in p.findall(doc)]
 
+
+#print StemmingTokenizer()('zoomin zoomin xypoint')
 
 def read(file):
     data = map(json.loads, open(file).readlines())
@@ -43,20 +44,24 @@ def read(file):
 
 def _toAll(files, tfidf):
     t= time.time()
-    feats = tfidf.get_feature_names()
+    #feats = tfidf.get_feature_names()
     list = [None]*len(files)
     for i in range(len(files)):
         file = files[i]
         text = file['question'] + ' ' + file['excerpt']
 
-	text = text.split()
-	t = []
-	for i in text:
-		if i in feats:
-			t.append(i)
-	text = string.join(' ', t)
-        
-        list[i] = text
+	#text = text.split()
+	#t = []
+	#for i in text:
+	#	if i in feats:
+	#		t.append(i)
+	#text = string.join(' ', t)
+        #text = file
+
+        #caracters = ["\'", "\n", "\r", "\t"]
+        #for c in caracters:
+        #    text = text.replace(c, "")
+	list[i] = text
     
     return list
 
@@ -66,8 +71,17 @@ def _toText(files):
     list = [""]*len(files)
     for i in range(len(files)):
         file = files[i]
-        
+	#text = file['question'] + ' ' + file['excerpt']
+        #file["excerpt"] = unicodedata.normalize('NFKD', file["excerpt"]).encode('ascii', 'ignore')
+        #file["question"]  = unicodedata.normalize('NFKD', file["question"]).encode('ascii', 'ignore')
+        #text = str(re.sub(r'[^\x00-\x7F]+',' ', file["question"])+" "+re.sub(r'[^\x00-\x7F]+',' ', file["excerpt"]))
 	text = file['question'] + ' ' + file['excerpt']
+
+	#text = file	
+
+	#caracters = ["\'", "\n", "\r", "\t"]
+        #for c in caracters:
+        #    text = text.replace(c, "")
         list[i] = text
     return list
 
@@ -78,11 +92,6 @@ def vectorizeTFIDF(files):
     tfs = tfidf.fit_transform(list)
     #print 'TFIDF: ', time.time() - t
 
-    t = time.time()
-    token = StemmingTokenizer()
-    for i in list:
-	token(i)
-    #print 'Time stemmer: ', time.time() - t
     return tfs, tfidf
 
 def numericLabels(labels):
@@ -100,9 +109,12 @@ def main():
     #Chama a funcao que faz o n-gram, na qual constroi o dicionario e entao chama a funcao do TF-IDF
 	train_tfs, tfidf = vectorizeTFIDF(train)
 
-	clf = sklearn.svm.LinearSVC(multi_class='ovr', dual=False)
+	clf = sklearn.svm.LinearSVC(multi_class='ovr', dual=False, tol=1e-10)
 	#lfp = sklearn.svm.LinearSVC(multi_class='ovr', tol=1e-6)
-
+	#t = time.time()
+	#corpus, dic = get_corpus(train)
+	#print 'corpus: ',time.time()-t
+	#tfidf = create_tfidf(corpus, dic)
 	clf.fit(train_tfs, train_label)
 
 	data = sys.stdin.readlines()
@@ -115,7 +127,7 @@ def main():
 
 	t = time.time()
 	X = tfidf.transform(_toText(inputs))
-	
+	#print 'Transform: ', time.time()-t
 	t = time.time()
 	yp = clf.predict(X)
 
