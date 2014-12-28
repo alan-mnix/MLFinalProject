@@ -20,22 +20,23 @@ token_dict = {}
 
 p = re.compile(r"[\w']+")
 
+#buffer = [None]*1000
+
 class StemmingTokenizer(object):
 
         def __init__(self):
-                self.stemmer = nltk.stem.porter.PorterStemmer()
+                #self.stemmer = nltk.stem.RSLPStemmer()
+		self.stemmer = nltk.stem.RegexpStemmer('ing$|s$|e$|able$|or$|er$|ness$|ional$|ful$|ment$', min = 4)
+		#self.stemmer = nltk.stem.porter.PorterStemmer()
 
         def __call__(self, doc):
-                return [self.stemmer.stem(t.lower()) for t in p.findall(doc)]
+            return [self.stemmer.stem(t.lower()) for t in p.findall(doc)]
+	        #self.stemmer.stem(t.lower())
+		
 
-#stemmer = EnglishStemmer(ignore_stopwords=True)
 
 def read(file):
-    #data = open(file).readlines()
     data = map(json.loads, open(file).readlines())
-    #with open(file) as f:
-        #for line in f:
-            #data.append(json.loads(line))
     m = data[0]
     data.pop(0)
     return m, data
@@ -46,9 +47,6 @@ def _toAll(files, tfidf):
     list = [None]*len(files)
     for i in range(len(files)):
         file = files[i]
-        #file["excerpt"] = unicodedata.normalize('NFKD', file["excerpt"]).encode('ascii', 'ignore')
-        #file["question"]  = unicodedata.normalize('NFKD', file["question"]).encode('ascii', 'ignore')
-        #text = str(re.sub(r'[^\x00-\x7F]+',' ', file["question"])+" "+re.sub(r'[^\x00-\x7F]+',' ', file["excerpt"]))
         text = file['question'] + ' ' + file['excerpt']
 
 	text = text.split()
@@ -57,13 +55,9 @@ def _toAll(files, tfidf):
 		if i in feats:
 			t.append(i)
 	text = string.join(' ', t)
-        #text = file    
-
-        #caracters = ["\'", "\n", "\r", "\t"]
-        #for c in caracters:
-        #    text = text.replace(c, "")
+        
         list[i] = text
-    #print '_toText: ', time.time()-t
+    
     return list
 
 
@@ -72,29 +66,23 @@ def _toText(files):
     list = [""]*len(files)
     for i in range(len(files)):
         file = files[i]
-        #file["excerpt"] = unicodedata.normalize('NFKD', file["excerpt"]).encode('ascii', 'ignore')
-        #file["question"]  = unicodedata.normalize('NFKD', file["question"]).encode('ascii', 'ignore')
-        #text = str(re.sub(r'[^\x00-\x7F]+',' ', file["question"])+" "+re.sub(r'[^\x00-\x7F]+',' ', file["excerpt"]))
-	text = file['question']
-
-	#text = file	
-
-	#caracters = ["\'", "\n", "\r", "\t"]
-        #for c in caracters:
-        #    text = text.replace(c, "")
+        
+	text = file['question'] + ' ' + file['excerpt']
         list[i] = text
-    #print '_toText: ', time.time()-t
     return list
 
 def vectorizeTFIDF(files):
+    t = time.time()
     list = _toText(files)
+    tfidf = TfidfVectorizer(tokenizer = StemmingTokenizer(), token_pattern="word", stop_words="english")
+    tfs = tfidf.fit_transform(list)
+    #print 'TFIDF: ', time.time() - t
 
     t = time.time()
-    #this can take some time
-    tfidf = TfidfVectorizer(tokenizer=StemmingTokenizer(), token_pattern="word", stop_words="english")
-    tfs = tfidf.fit_transform(list)
-    #print 'TFIDF: ', time.time()-t
-    features = tfidf.get_feature_names()
+    token = StemmingTokenizer()
+    for i in list:
+	token(i)
+    #print 'Time stemmer: ', time.time() - t
     return tfs, tfidf
 
 def numericLabels(labels):
@@ -112,27 +100,10 @@ def main():
     #Chama a funcao que faz o n-gram, na qual constroi o dicionario e entao chama a funcao do TF-IDF
 	train_tfs, tfidf = vectorizeTFIDF(train)
 
-	#t = time.time()
-	#corpus, dic = get_corpus(train)
-	#print 'corpus: ',time.time()-t
-	#tfidf = create_tfidf(corpus, dic)
-
-	clf = sklearn.svm.LinearSVC(multi_class='ovr', tol=1e-6, dual=False)
-	clfp = sklearn.svm.LinearSVC(multi_class='ovr', tol=1e-6)
+	clf = sklearn.svm.LinearSVC(multi_class='ovr', dual=False)
+	#lfp = sklearn.svm.LinearSVC(multi_class='ovr', tol=1e-6)
 
 	clf.fit(train_tfs, train_label)
-	#x_train = x_train[ (y_train == 2) | (y_train == 3) ,:]
-        #y_train = y_train[ (y_train == 2)  | (y_train == 3) ]
-
-        #x_val = x_val[ (y_val == 2) | (y_val == 3) ,:]
-        #y_val = y_val[ (y_val == 2) | (y_val == 3) ] 
-	
-	#print train_tfs[idxp,:].shape, train_label[idxp].shape
-
-	#clfp.fit(train_tfs[idxp,:], train_label[idxp])
-	#print 'SVM: ', time.time()-t
-
-	#print 'Manda os paranaue'
 
 	data = sys.stdin.readlines()
 	m = int(data[0])
@@ -144,16 +115,9 @@ def main():
 
 	t = time.time()
 	X = tfidf.transform(_toText(inputs))
-	#print 'Transform: ', time.time()-t
+	
 	t = time.time()
 	yp = clf.predict(X)
-	
-	#idxp = (yp == 'android') | (yp=='unix')
-	#ypp = clfp.predict(X[idxp,:])
-
-	#yp[idxp] = ypp
-
-	#print 'Predict: ', time.time()-t
 
 	sys.stdout.write('\n'.join(yp))
 
